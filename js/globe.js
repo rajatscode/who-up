@@ -143,7 +143,8 @@ export class GlobeRenderer {
       alpha: false,
       powerPreference: 'high-performance',
     });
-    this.renderer.setPixelRatio(1);
+    // Cap at 1.5x for Retina — avoids centering issues at 1x, avoids perf cost at 2-3x
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.setClearColor(COLORS.background);
     this.renderer.toneMapping = THREE.NoToneMapping;
   }
@@ -185,6 +186,10 @@ export class GlobeRenderer {
     this.controls.enablePan = false;
     this.controls.autoRotate = true;
     this.controls.autoRotateSpeed = 0.4; // ~1 rev per 90s
+
+    // Ensure camera and target are at origin
+    this.controls.target.set(0, 0, 0);
+    this.controls.update();
 
     // Pause auto-rotate on interaction, resume after 10s
     this.controls.addEventListener('start', () => {
