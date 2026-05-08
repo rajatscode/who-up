@@ -50,7 +50,7 @@ export function showRegionalPanel(countryCode, date) {
         const localHour = Math.floor(city.localHour);
         const localMin = Math.round((city.localHour % 1) * 60).toString().padStart(2, '0');
         const cityAwake = formatCount(city.awake);
-        return `<div class="regional-city">${city.name}: ~${cityAwake} awake (${localHour}:${localMin})</div>`;
+        return `<div class="regional-city">${city.name}: ${cityAwake} awake (${localHour}:${localMin})</div>`;
       })
       .join('');
     citiesContainer.classList.remove('hidden');

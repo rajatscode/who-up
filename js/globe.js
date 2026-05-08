@@ -43,6 +43,73 @@ function createGlowTexture() {
   return texture;
 }
 
+// Pre-bake population density hotspots to a texture (computed once, sampled in shader)
+function createPopulationDensityTexture() {
+  const width = 512;
+  const height = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.createImageData(width, height);
+  const data = imageData.data;
+
+  // Render all 22 Gaussian hotspots to the canvas
+  // Hotspots: [lon, lat, sizeX, sizeY, intensity]
+  const hotspots = [
+    [116, 35, 18, 12, 0.9],   // China (Beijing-Shanghai region)
+    [139, 36, 8, 6, 0.7],     // Japan (Tokyo-Osaka)
+    [127, 37, 6, 5, 0.5],     // Korea (Seoul-Busan)
+    [113, 23, 10, 8, 0.7],    // Southern China (Guangzhou region)
+    [78, 22, 12, 10, 0.85],   // India (Mumbai-Bangalore region)
+    [73, 19, 5, 4, 0.6],      // India (Maharashtra)
+    [77, 28, 6, 5, 0.7],      // India (Delhi region)
+    [107, 3, 15, 10, 0.6],    // Indonesia (Jakarta)
+    [101, -14, 8, 8, 0.4],    // Indonesia (Sumatra)
+    [-29, -41, 6, 5, 0.4],    // South Africa (Johannesburg)
+    [-31, -30, 6, 5, 0.35],   // South Africa (Cape Town)
+    [-10, -48, 18, 8, 0.5],   // Europe (London-Paris)
+    [0, -52, 6, 5, 0.4],      // Europe (Scandinavia)
+    [-37, -56, 8, 6, 0.35],   // Russia (Moscow)
+    [-3, -7, 8, 8, 0.5],      // Africa (Nigeria)
+    [-36, 1, 12, 12, 0.3],    // Africa (East Africa)
+    [74, -41, 10, 8, 0.5],    // Australia (Sydney region)
+    [87, -35, 15, 10, 0.3],   // Australia (Melbourne-Brisbane)
+    [118, -34, 8, 6, 0.35],   // Australia (Perth-Adelaide)
+    [47, 23, 10, 10, 0.5],    // Middle East (Dubai-Gulf)
+    [99, -19, 8, 6, 0.4],     // Southeast Asia (Thailand)
+    [58, 34, 6, 5, 0.3],      // Central Asia (Pakistan-Afghanistan)
+  ];
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const lat = (y / height - 0.5) * 180;
+      const lon = (x / width - 0.5) * 360;
+      let d = 0;
+
+      for (const [hlon, hlat, sizeX, sizeY, intensity] of hotspots) {
+        const dx = (lon - hlon) / sizeX;
+        const dy = (lat - hlat) / sizeY;
+        const dist2 = dx * dx + dy * dy;
+        d += Math.exp(-dist2) * intensity;
+      }
+
+      d = Math.min(d, 1.0);
+      const idx = (y * width + x) * 4;
+      data[idx] = Math.round(d * 255);     // R channel stores density
+      data[idx + 1] = 0;
+      data[idx + 2] = 0;
+      data[idx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  return texture;
+}
+
 export class GlobeRenderer {
   constructor(canvas) {
     this.canvas = canvas;
@@ -145,6 +212,8 @@ export class GlobeRenderer {
     earthDayTex.colorSpace = THREE.SRGBColorSpace;
     earthNightTex.colorSpace = THREE.SRGBColorSpace;
 
+    const popDensityTex = createPopulationDensityTexture();
+
     this.globeMaterial = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
@@ -154,6 +223,7 @@ export class GlobeRenderer {
         uTransitionColor: { value: new THREE.Color(COLORS.transition) },
         uEarthDay: { value: earthDayTex },
         uEarthNight: { value: earthNightTex },
+        uPopDensity: { value: popDensityTex },
       },
       vertexShader: `
         varying vec3 vNormal;
@@ -178,41 +248,12 @@ export class GlobeRenderer {
         uniform float uTime;
         uniform sampler2D uEarthDay;
         uniform sampler2D uEarthNight;
+        uniform sampler2D uPopDensity;
 
         varying vec3 vNormal;
         varying vec3 vPosition;
         varying vec2 vUv;
         varying vec3 vViewPos;
-
-        // Population density hotspots
-        float populationDensity(vec2 uv) {
-          float lat = (uv.y - 0.5) * 180.0;
-          float lon = (uv.x - 0.5) * 360.0;
-          float d = 0.0;
-          d += exp(-pow(length(vec2(lon-116.0, lat-35.0)/vec2(18.0,12.0)),2.0))*0.9;
-          d += exp(-pow(length(vec2(lon-139.0, lat-36.0)/vec2(8.0,6.0)),2.0))*0.7;
-          d += exp(-pow(length(vec2(lon-127.0, lat-37.0)/vec2(6.0,5.0)),2.0))*0.5;
-          d += exp(-pow(length(vec2(lon-113.0, lat-23.0)/vec2(10.0,8.0)),2.0))*0.7;
-          d += exp(-pow(length(vec2(lon-78.0, lat-22.0)/vec2(12.0,10.0)),2.0))*0.85;
-          d += exp(-pow(length(vec2(lon-73.0, lat-19.0)/vec2(5.0,4.0)),2.0))*0.6;
-          d += exp(-pow(length(vec2(lon-77.0, lat-28.0)/vec2(6.0,5.0)),2.0))*0.7;
-          d += exp(-pow(length(vec2(lon-107.0, lat+3.0)/vec2(15.0,10.0)),2.0))*0.6;
-          d += exp(-pow(length(vec2(lon-101.0, lat-14.0)/vec2(8.0,8.0)),2.0))*0.4;
-          d += exp(-pow(length(vec2(lon-29.0, lat-41.0)/vec2(6.0,5.0)),2.0))*0.4;
-          d += exp(-pow(length(vec2(lon-31.0, lat-30.0)/vec2(6.0,5.0)),2.0))*0.35;
-          d += exp(-pow(length(vec2(lon-10.0, lat-48.0)/vec2(18.0,8.0)),2.0))*0.5;
-          d += exp(-pow(length(vec2(lon-0.0, lat-52.0)/vec2(6.0,5.0)),2.0))*0.4;
-          d += exp(-pow(length(vec2(lon-37.0, lat-56.0)/vec2(8.0,6.0)),2.0))*0.35;
-          d += exp(-pow(length(vec2(lon-3.0, lat-7.0)/vec2(8.0,8.0)),2.0))*0.5;
-          d += exp(-pow(length(vec2(lon-36.0, lat+1.0)/vec2(12.0,12.0)),2.0))*0.3;
-          d += exp(-pow(length(vec2(lon+74.0, lat-41.0)/vec2(10.0,8.0)),2.0))*0.5;
-          d += exp(-pow(length(vec2(lon+87.0, lat-35.0)/vec2(15.0,10.0)),2.0))*0.3;
-          d += exp(-pow(length(vec2(lon+118.0, lat-34.0)/vec2(8.0,6.0)),2.0))*0.35;
-          d += exp(-pow(length(vec2(lon+47.0, lat+23.0)/vec2(10.0,10.0)),2.0))*0.5;
-          d += exp(-pow(length(vec2(lon+99.0, lat-19.0)/vec2(8.0,6.0)),2.0))*0.4;
-          d += exp(-pow(length(vec2(lon+58.0, lat+34.0)/vec2(6.0,5.0)),2.0))*0.3;
-          return clamp(d, 0.0, 1.0);
-        }
 
         void main() {
           vec3 worldNorm = normalize(vPosition);
@@ -222,7 +263,7 @@ export class GlobeRenderer {
           // Sample real satellite textures
           vec3 dayTex = texture2D(uEarthDay, vUv).rgb;
           vec3 nightTex = texture2D(uEarthNight, vUv).rgb;
-          float popDensity = populationDensity(vUv);
+          float popDensity = texture2D(uPopDensity, vUv).r;
 
           // === DAY SIDE ===
           // Real satellite image + diffuse lighting

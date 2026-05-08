@@ -57,8 +57,10 @@ function updateCountDisplay() {
   targetCount = estimateAwake(now);
 
   // Smooth interpolation toward target
+  // Faster lerp when far from target (initial load or large jumps)
   const diff = targetCount - displayedCount;
-  const lerpSpeed = displayedCount === 0 ? 0.25 : 0.08;
+  const pctOff = Math.abs(diff) / (targetCount || 1);
+  const lerpSpeed = pctOff > 0.5 ? 0.3 : pctOff > 0.1 ? 0.15 : 0.08;
   displayedCount += diff * lerpSpeed;
 
   // Add subtle tick jitter for live clock feel (±0.01% noise)
