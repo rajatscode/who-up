@@ -585,7 +585,6 @@ export class GlobeRenderer {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h, true);
-    this.composer.setSize(w, h);
   }
 
   /**
