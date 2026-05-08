@@ -4,9 +4,6 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { getAwakeData, getWakenessAtPoint } from './awake.js';
 import { loadCountryBoundaries } from './country-borders.js';
 
@@ -150,23 +147,9 @@ export class GlobeRenderer {
   }
 
   _initPostProcessing() {
-    this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
-
-    const quarterW = Math.floor(window.innerWidth * 0.25);
-    const quarterH = Math.floor(window.innerHeight * 0.25);
-    const bloom = new UnrealBloomPass(
-      new THREE.Vector2(quarterW, quarterH),
-      0.2,    // strength
-      0.3,    // radius
-      0.98    // threshold
-    );
-    this.composer.addPass(bloom);
-    this.bloomPass = bloom;
-
-    // Performance-adaptive: if first 60 frames average < 30 FPS, disable bloom
-    this._frameTimes = [];
-    this._perfCheckDone = false;
+    // Disabled: v19 shader effects (atmosphere, fresnel, glow) provide visual pop without post-processing
+    // UnrealBloomPass is too expensive on mobile/laptop GPUs. Direct rendering only.
+    this._useDirectRender = true;
   }
 
   _initCamera() {
@@ -610,27 +593,6 @@ export class GlobeRenderer {
    */
   render() {
     this.controls.update();
-
-    // Performance-adaptive: measure first 60 frames, bypass composer if too slow
-    if (!this._perfCheckDone) {
-      this._frameTimes.push(performance.now());
-      if (this._frameTimes.length > 60) {
-        const elapsed = this._frameTimes[60] - this._frameTimes[0];
-        const avgFps = 60 / (elapsed / 1000);
-        if (avgFps < 30) {
-          console.log(`who-up: ${avgFps.toFixed(0)} FPS detected, bypassing composer for performance`);
-          this._useDirectRender = true;
-        }
-        this._perfCheckDone = true;
-        this._frameTimes = null;
-      }
-    }
-
-    // Direct render bypasses EffectComposer entirely (no offscreen framebuffer copy)
-    if (this._useDirectRender) {
-      this.renderer.render(this.scene, this.camera);
-    } else {
-      this.composer.render();
-    }
+    this.renderer.render(this.scene, this.camera);
   }
 }
