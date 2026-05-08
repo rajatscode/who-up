@@ -11,9 +11,7 @@ let selectedCountry = null;
  * Show regional panel with country data
  */
 export function showRegionalPanel(countryCode, date) {
-  console.log('showRegionalPanel called:', countryCode);
   const country = getCountry(countryCode);
-  console.log('Country lookup result:', country ? country.name : 'NULL');
   if (!country) return;
 
   selectedCountry = country;
@@ -34,13 +32,13 @@ export function showRegionalPanel(countryCode, date) {
 
   // Calculate awake population: sum tracked cities + estimate untracked
   let regionalAwake = regionCities.reduce((sum, city) => sum + city.awake, 0);
-  const trackedPopulation = regionCities.reduce((sum, city) => sum + city.pop * 1e6, 0);
+  const trackedPopulation = regionCities.reduce((sum, city) => sum + city.population, 0);
 
   if (country.population) {
     // Always estimate untracked population and add to total
-    const utcHour = date.getUTCHours() + date.getUTCMinutes() / 60;
     const wakenessProb = getWakenessAtPoint(0, country.utcOffset * 15, date);
-    const untrackedPopulation = Math.max(0, country.population * 1e6 - trackedPopulation);
+    const totalCountryPop = country.population * 1e6; // convert millions to actual
+    const untrackedPopulation = Math.max(0, totalCountryPop - trackedPopulation);
     const untrackedAwake = Math.round(untrackedPopulation * wakenessProb);
     regionalAwake += untrackedAwake;
   }
@@ -75,7 +73,6 @@ export function showRegionalPanel(countryCode, date) {
   }
 
   // Show panel
-  console.log('Showing regional panel for', country.name, '- awake:', awakeCount.textContent);
   panel.classList.remove('hidden');
 }
 
