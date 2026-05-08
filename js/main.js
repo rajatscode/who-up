@@ -1,7 +1,7 @@
 /**
  * Main entry point for who-up globe
  */
-import { GlobeRenderer } from './globe.js?v=20';
+import { GlobeRenderer } from './globe.js?v=21';
 import { estimateAwake, formatCount } from './awake.js';
 import { showRegionalPanel, hideRegionalPanel, initRegionalUI } from './regional-ui.js';
 import { getCountryAtPoint } from './geospatial.js';
@@ -122,13 +122,19 @@ canvas.addEventListener('mousemove', (e) => {
     const localH = Math.floor(city.localHour);
     const localM = Math.round((city.localHour % 1) * 60).toString().padStart(2, '0');
     tooltipText.textContent = `${city.name}: ~${awakeM}M awake (${localH}:${localM} local)`;
+
+    // Highlight hovered city marker
+    globe.highlightMarker(city.name);
+    canvas.style.cursor = 'pointer';
   } else {
     tooltip.classList.add('hidden');
+    canvas.style.cursor = 'grab';
   }
 });
 
 canvas.addEventListener('mouseleave', () => {
   tooltip.classList.add('hidden');
+  canvas.style.cursor = 'grab';
 });
 
 /**
@@ -217,12 +223,52 @@ function updateCityInfo() {
 }
 
 /**
+ * Generate contextual insight message based on time of day
+ */
+function generateInsight() {
+  const now = new Date();
+  const utcHour = now.getUTCHours() + now.getUTCMinutes() / 60;
+  const globalAwake = estimateAwake(now);
+
+  const messages = [];
+
+  // Determine active regions based on UTC hour
+  if (utcHour >= 0 && utcHour < 6) {
+    // Americas sleeping, Europe/Africa night
+    messages.push('Deep night across the Americas — focus on essential workers');
+    messages.push('Europe entering early morning — first commuters waking');
+  } else if (utcHour >= 6 && utcHour < 12) {
+    // Europe morning, Asia night
+    messages.push('Europe in morning rush — over 200M commuting');
+    messages.push('Asia winding down evening shift');
+  } else if (utcHour >= 12 && utcHour < 18) {
+    // Asia peak noon, Americas late morning
+    messages.push('Asia at midday peak — 2B+ at their busiest');
+    messages.push('Europe in afternoon lull — post-lunch energy dip');
+  } else {
+    // Americas day, Europe evening
+    messages.push('Americas in full swing — highest density of activity');
+    messages.push('Europe entering evening shift — 600M+ wrapping work');
+  }
+
+  // Always add a future-looking message
+  messages.push(`Rising toward ${Math.round(globalAwake / 1e9 * 10) / 10}B: See who's waking next`);
+
+  return messages[Math.floor(Math.random() * messages.length)];
+}
+
+/**
  * Periodic update for markers + stats
  */
 function slowUpdate() {
   const now = new Date();
   globe.updateMarkers(now);
   updateCityInfo();
+
+  // Update insight message
+  const insightEl = document.getElementById('insight-message');
+  insightEl.textContent = generateInsight();
+  insightEl.classList.remove('hidden');
 }
 
 // Initialize

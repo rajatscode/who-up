@@ -331,7 +331,7 @@ export class GlobeRenderer {
           float fresnel = 1.0 - dot(vNormal, vViewDir);
           // Day side gets brighter atmosphere
           float sunFacing = dot(normalize(vWorldPos), uSunDirection) * 0.5 + 0.5;
-          float intensity = pow(fresnel, 3.0) * (0.4 + sunFacing * 0.5);
+          float intensity = pow(fresnel, 2.8) * (0.5 + sunFacing * 0.6);
           // Warmer color on sun-facing side
           vec3 col = mix(uColor, vec3(0.5, 0.7, 0.9), sunFacing * 0.3);
           gl_FragColor = vec4(col, intensity);
@@ -567,6 +567,21 @@ export class GlobeRenderer {
       }
     }
     return null;
+  }
+
+  /**
+   * Highlight a city marker on hover (boost glow)
+   */
+  highlightMarker(cityName) {
+    for (let i = 0; i < this._activeMarkerCount; i++) {
+      const { dot, glow } = this._markerPool[i];
+      if (dot.userData?.name === cityName) {
+        // Boost hovered marker
+        dot.material.opacity = Math.min(dot.material.opacity * 1.8, 1.0);
+        glow.scale.multiplyScalar(1.6);
+        glow.material.opacity = Math.min(glow.material.opacity * 2.5, 0.6);
+      }
+    }
   }
 
   /**
