@@ -444,7 +444,7 @@ export class GlobeRenderer {
     this.scene.add(this.markerGroup);
 
     // Pre-allocate pool of dot + glow sprite pairs (200 cities max)
-    const POOL_SIZE = 200;
+    const POOL_SIZE = 80;
     this._markerPool = [];
     this._reusableColor = new THREE.Color();
     this._transitionColor = new THREE.Color(COLORS.transition);
@@ -516,7 +516,7 @@ export class GlobeRenderer {
 
     let idx = 0;
     for (const city of data) {
-      if (city.wakeProbability < 0.1 || idx >= this._markerPool.length) {
+      if (city.wakeProbability < 0.15 || city.population < 3e6 || idx >= this._markerPool.length) {
         continue;
       }
 

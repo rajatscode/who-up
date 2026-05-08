@@ -20,9 +20,9 @@ const SCALE_FACTOR = WORLD_POPULATION / TRACKED_POPULATION;
  * East Asia sleeps later, Southern Europe sleeps later.
  */
 const SLEEP_PROFILES = {
-  default:        { sleepStart: 23.0, sleepEnd: 1.5, wakeStart: 5.5, wakeEnd: 7.5, peakAwake: 0.88, deepSleep: 0.04 },
-  eastAsia:       { sleepStart: 0.5,  sleepEnd: 2.5, wakeStart: 6.5, wakeEnd: 8.5, peakAwake: 0.90, deepSleep: 0.04 },
-  southernEurope: { sleepStart: 0.0,  sleepEnd: 2.0, wakeStart: 6.0, wakeEnd: 8.0, peakAwake: 0.88, deepSleep: 0.04 },
+  default:        { sleepStart: 23.0, sleepEnd: 1.5, wakeStart: 5.5, wakeEnd: 7.5, peakAwake: 0.75, deepSleep: 0.03 },
+  eastAsia:       { sleepStart: 0.5,  sleepEnd: 2.5, wakeStart: 6.5, wakeEnd: 8.5, peakAwake: 0.78, deepSleep: 0.03 },
+  southernEurope: { sleepStart: 0.0,  sleepEnd: 2.0, wakeStart: 6.0, wakeEnd: 8.0, peakAwake: 0.75, deepSleep: 0.03 },
 };
 
 function getSleepProfile(utcOffset) {
