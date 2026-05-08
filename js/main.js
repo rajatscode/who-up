@@ -28,6 +28,90 @@ const cityActivityTextEl = document.getElementById('city-activity-text');
 const globe = new GlobeRenderer(canvas);
 
 /**
+ * Time-lapse clock system
+ * Default: live mode (returns real time)
+ * Time-lapse: advances simulated time by deltaMs * speed each frame
+ */
+let timelapseActive = false;
+let timelapsePlaying = false;
+let timelapseSpeed = 10;
+let simTime = Date.now();       // simulated epoch ms
+let lastFrameTime = Date.now(); // real ms of last frame
+
+function getSimTime() {
+  if (!timelapseActive) return new Date();
+  return new Date(simTime);
+}
+
+function advanceSimTime() {
+  if (!timelapseActive || !timelapsePlaying) return;
+  const realNow = Date.now();
+  const deltaMs = Math.min(realNow - lastFrameTime, 100); // cap to avoid huge jumps
+  simTime += deltaMs * timelapseSpeed;
+  lastFrameTime = realNow;
+}
+
+// Time-lapse DOM
+const timelapseBar = document.getElementById('timelapse-bar');
+const timelapseBtnToggle = document.getElementById('tl-toggle');
+const timelapseBtnPlay = document.getElementById('tl-play');
+const timelapseBtnLive = document.getElementById('tl-live');
+const timelapseTimeEl = document.getElementById('tl-time');
+const timelapseSpeedBtns = document.querySelectorAll('.tl-speed-btn');
+
+// Toggle time-lapse mode on/off
+timelapseBtnToggle.addEventListener('click', () => {
+  if (timelapseActive) {
+    // Return to live
+    goLive();
+  } else {
+    // Enter time-lapse
+    timelapseActive = true;
+    timelapsePlaying = false;
+    simTime = Date.now();
+    lastFrameTime = Date.now();
+    timelapseBar.classList.add('visible');
+    timelapseBtnToggle.textContent = 'LIVE';
+    timelapseBtnToggle.classList.add('tl-return');
+    timelapseBtnPlay.textContent = '\u25B6'; // play icon
+    displayedCount = estimateAwake(getSimTime()); // snap counter
+    // Force immediate update
+    slowUpdate();
+    updateStats();
+  }
+});
+
+// Play/Pause
+timelapseBtnPlay.addEventListener('click', () => {
+  timelapsePlaying = !timelapsePlaying;
+  lastFrameTime = Date.now();
+  timelapseBtnPlay.textContent = timelapsePlaying ? '\u275A\u275A' : '\u25B6';
+});
+
+// Live button — snap back to real time
+timelapseBtnLive.addEventListener('click', goLive);
+
+function goLive() {
+  timelapseActive = false;
+  timelapsePlaying = false;
+  timelapseBar.classList.remove('visible');
+  timelapseBtnToggle.textContent = 'Time-lapse';
+  timelapseBtnToggle.classList.remove('tl-return');
+  displayedCount = estimateAwake(new Date()) * 0.95; // smooth transition back
+  slowUpdate();
+  updateStats();
+}
+
+// Speed buttons
+timelapseSpeedBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    timelapseSpeed = parseInt(btn.dataset.speed);
+    timelapseSpeedBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+/**
  * Live counter state
  */
 let displayedCount = 0;
@@ -53,7 +137,7 @@ function formatDelta(n) {
  * Update the awake count with smooth per-frame animation
  */
 function updateCountDisplay() {
-  const now = new Date();
+  const now = getSimTime();
   targetCount = estimateAwake(now);
 
   // Smooth interpolation toward target
@@ -81,7 +165,7 @@ function updateCountDisplay() {
  * Update the key statistics (delta + projection)
  */
 function updateStats() {
-  const now = new Date();
+  const now = getSimTime();
   const awakeNow = estimateAwake(now);
 
   // 1 hour ago
@@ -165,7 +249,7 @@ canvas.addEventListener('click', (e) => {
 
       const country = getCountryAtPoint(lat, lonFromTheta);
       if (country) {
-        showRegionalPanel(country.code, new Date());
+        showRegionalPanel(country.code, getSimTime());
       } else {
         hideRegionalPanel();
       }
@@ -179,7 +263,10 @@ canvas.addEventListener('click', (e) => {
 function animate() {
   requestAnimationFrame(animate);
 
-  const now = new Date();
+  // Advance simulated clock if time-lapse is playing
+  advanceSimTime();
+
+  const now = getSimTime();
   globe.updateSunDirection(now);
   globe.render();
 
@@ -188,13 +275,26 @@ function animate() {
 
   // Smooth count animation every frame
   updateCountDisplay();
+
+  // Update time-lapse display and markers at higher frequency during time-lapse
+  if (timelapseActive && timelapsePlaying) {
+    globe.updateMarkers(now);
+    // Update time display
+    const h = now.getUTCHours().toString().padStart(2, '0');
+    const m = now.getUTCMinutes().toString().padStart(2, '0');
+    const mon = now.toLocaleString('en', { month: 'short' });
+    const day = now.getUTCDate();
+    timelapseTimeEl.textContent = `${mon} ${day}, ${h}:${m} UTC`;
+    // In time-lapse, snap counter faster
+    displayedCount += (targetCount - displayedCount) * 0.4;
+  }
 }
 
 /**
  * Update city info card (when zoomed in)
  */
 function updateCityInfo() {
-  const now = new Date();
+  const now = getSimTime();
   const city = getCurrentCity();
 
   if (!city || !isCityDetailVisible()) {
@@ -226,7 +326,7 @@ function updateCityInfo() {
  * Generate contextual insight message based on time of day
  */
 function generateInsight() {
-  const now = new Date();
+  const now = getSimTime();
   const utcHour = now.getUTCHours() + now.getUTCMinutes() / 60;
   const globalAwake = estimateAwake(now);
 
@@ -261,7 +361,7 @@ function generateInsight() {
  * Periodic update for markers + stats
  */
 function slowUpdate() {
-  const now = new Date();
+  const now = getSimTime();
   globe.updateMarkers(now);
   updateCityInfo();
 
@@ -278,7 +378,7 @@ initRegionalUI();
 initCityDetail(globe.scene);
 
 // Initial count — start at 85% for fast dramatic ramp-up
-targetCount = estimateAwake(new Date());
+targetCount = estimateAwake(getSimTime());
 displayedCount = targetCount * 0.85;
 
 // Start

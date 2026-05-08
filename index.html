@@ -75,6 +75,19 @@
     </div>
   </div>
 
+  <!-- Time-lapse controls -->
+  <button id="tl-toggle" class="tl-trigger">Time-lapse</button>
+  <div id="timelapse-bar">
+    <button id="tl-play" class="tl-btn">&#9654;</button>
+    <div class="tl-speeds">
+      <button class="tl-speed-btn" data-speed="10">10x</button>
+      <button class="tl-speed-btn active" data-speed="100">100x</button>
+      <button class="tl-speed-btn" data-speed="1000">1000x</button>
+    </div>
+    <span id="tl-time">— UTC</span>
+    <button id="tl-live" class="tl-btn tl-live-btn">LIVE</button>
+  </div>
+
   <!-- Three.js from CDN -->
   <script type="importmap">
   {
@@ -84,6 +97,6 @@
     }
   }
   </script>
-  <script type="module" src="js/main.js?v=23"></script>
+  <script type="module" src="js/main.js?v=24"></script>
 </body>
 </html>
