@@ -208,7 +208,7 @@ export class GlobeRenderer {
   }
 
   _initGlobe() {
-    const geometry = new THREE.SphereGeometry(GLOBE_RADIUS, 128, 64);
+    const geometry = new THREE.SphereGeometry(GLOBE_RADIUS, 64, 32);
 
     // Load real satellite textures
     const textureLoader = new THREE.TextureLoader();
@@ -610,21 +610,26 @@ export class GlobeRenderer {
   render() {
     this.controls.update();
 
-    // Performance-adaptive bloom: measure first 60 frames, disable bloom if too slow
+    // Performance-adaptive: measure first 60 frames, bypass composer if too slow
     if (!this._perfCheckDone) {
       this._frameTimes.push(performance.now());
       if (this._frameTimes.length > 60) {
         const elapsed = this._frameTimes[60] - this._frameTimes[0];
         const avgFps = 60 / (elapsed / 1000);
         if (avgFps < 30) {
-          console.log(`who-up: ${avgFps.toFixed(0)} FPS detected, disabling bloom for performance`);
-          this.bloomPass.enabled = false;
+          console.log(`who-up: ${avgFps.toFixed(0)} FPS detected, bypassing composer for performance`);
+          this._useDirectRender = true;
         }
         this._perfCheckDone = true;
         this._frameTimes = null;
       }
     }
 
-    this.composer.render();
+    // Direct render bypasses EffectComposer entirely (no offscreen framebuffer copy)
+    if (this._useDirectRender) {
+      this.renderer.render(this.scene, this.camera);
+    } else {
+      this.composer.render();
+    }
   }
 }

@@ -1,7 +1,7 @@
 /**
  * Main entry point for who-up globe
  */
-import { GlobeRenderer } from './globe.js?v=17';
+import { GlobeRenderer } from './globe.js?v=18';
 import { estimateAwake, formatCount } from './awake.js';
 import { showRegionalPanel, hideRegionalPanel, initRegionalUI } from './regional-ui.js';
 import { getCountryAtPoint } from './geospatial.js';
