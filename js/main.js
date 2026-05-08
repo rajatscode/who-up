@@ -26,6 +26,7 @@ const cityActivityTextEl = document.getElementById('city-activity-text');
 
 // Initialize globe
 const globe = new GlobeRenderer(canvas);
+window.debugGlobe = globe; // Debug: expose for console access
 
 /**
  * Live counter state
@@ -150,7 +151,9 @@ canvas.addEventListener('click', (e) => {
       while (lonFromTheta < -180) lonFromTheta += 360;
       while (lonFromTheta > 180) lonFromTheta -= 360;
 
+      console.log('Click coords:', `lat=${lat.toFixed(1)} lon=${lonFromTheta.toFixed(1)}`);
       const country = getCountryAtPoint(lat, lonFromTheta);
+      console.log('Country found:', country ? country.name : 'NULL');
       if (country) {
         showRegionalPanel(country.code, new Date());
       } else {
