@@ -610,6 +610,71 @@ export class GlobeRenderer {
     return this.globe;
   }
 
+  /**
+   * Smooth orbit to a lat/lon location (regional view)
+   */
+  orbitToLocation(lat, lon, distance = 12) {
+    const phi = (90 - lat) * Math.PI / 180;
+    const theta = (lon + 180) * Math.PI / 180;
+
+    const x = -distance * Math.sin(phi) * Math.cos(theta);
+    const y = distance * Math.cos(phi);
+    const z = distance * Math.sin(phi) * Math.sin(theta);
+
+    this.animState.startPos.copy(this.camera.position);
+    this.animState.endPos.set(x, y, z);
+    this.animState.startTarget.copy(this.controls.target);
+    this.animState.endTarget.set(0, 0, 0);
+    this.animState.elapsed = 0;
+    this.animState.duration = 3000;
+    this.animState.active = true;
+
+    // Pause auto-rotate during animation
+    this.controls.autoRotate = false;
+    clearTimeout(this.autoRotateTimeout);
+  }
+
+  /**
+   * Smooth orbit back to global view
+   */
+  orbitToGlobal() {
+    this.animState.startPos.copy(this.camera.position);
+    this.animState.endPos.set(0, 0, 22);
+    this.animState.startTarget.copy(this.controls.target);
+    this.animState.endTarget.set(0, 0, 0);
+    this.animState.elapsed = 0;
+    this.animState.duration = 2500;
+    this.animState.active = true;
+
+    // Resume auto-rotate after animation completes
+    clearTimeout(this.autoRotateTimeout);
+    this.autoRotateTimeout = setTimeout(() => {
+      this.controls.autoRotate = true;
+    }, 2600);
+  }
+
+  /**
+   * Update camera animation (ease-in-out interpolation)
+   */
+  _updateCameraAnim(deltaMs) {
+    if (!this.animState.active) return;
+
+    this.animState.elapsed += deltaMs;
+    let t = Math.min(this.animState.elapsed / this.animState.duration, 1);
+
+    // Ease-in-out cubic
+    t = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    this.camera.position.lerpVectors(this.animState.startPos, this.animState.endPos, t);
+    this.controls.target.lerpVectors(this.animState.startTarget, this.animState.endTarget, t);
+    this.camera.lookAt(this.controls.target);
+
+    if (this.animState.elapsed >= this.animState.duration) {
+      this.animState.active = false;
+      this.controls.update();
+    }
+  }
+
   _onResize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
@@ -622,7 +687,14 @@ export class GlobeRenderer {
    * Main render loop tick
    */
   render() {
-    this.controls.update();
+    const now = performance.now();
+    const deltaMs = now - this._lastRenderTime;
+    this._lastRenderTime = now;
+
+    this._updateCameraAnim(deltaMs);
+    if (!this.animState.active) {
+      this.controls.update();
+    }
     this.renderer.render(this.scene, this.camera);
   }
 }

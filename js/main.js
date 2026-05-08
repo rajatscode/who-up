@@ -1,7 +1,7 @@
 /**
  * Main entry point for who-up globe
  */
-import { GlobeRenderer } from './globe.js?v=21';
+import { GlobeRenderer } from './globe.js?v=22';
 import { estimateAwake, formatCount } from './awake.js';
 import { showRegionalPanel, hideRegionalPanel, initRegionalUI } from './regional-ui.js';
 import { getCountryAtPoint } from './geospatial.js';
@@ -250,6 +250,7 @@ canvas.addEventListener('click', (e) => {
       const country = getCountryAtPoint(lat, lonFromTheta);
       if (country) {
         showRegionalPanel(country.code, getSimTime());
+        globe.orbitToLocation(lat, lonFromTheta, 12);
       } else {
         hideRegionalPanel();
       }
@@ -433,6 +434,11 @@ console.log('who-up: initializing...');
 
 initRegionalUI();
 initCityDetail(globe.scene);
+
+// Wire regional close button to camera orbit animation
+document.getElementById('regional-close-btn').addEventListener('click', () => {
+  globe.orbitToGlobal();
+});
 
 // Initial count — start at 85% for fast dramatic ramp-up
 targetCount = estimateAwake(getSimTime());
