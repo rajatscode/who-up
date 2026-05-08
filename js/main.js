@@ -247,6 +247,22 @@ canvas.addEventListener('click', (e) => {
       while (lonFromTheta < -180) lonFromTheta += 360;
       while (lonFromTheta > 180) lonFromTheta -= 360;
 
+      // Visual feedback: pulse glow at click point
+      const feedback = document.createElement('div');
+      feedback.style.position = 'fixed';
+      feedback.style.left = e.clientX + 'px';
+      feedback.style.top = e.clientY + 'px';
+      feedback.style.width = '40px';
+      feedback.style.height = '40px';
+      feedback.style.transform = 'translate(-50%, -50%)';
+      feedback.style.borderRadius = '50%';
+      feedback.style.background = 'radial-gradient(circle, rgba(127,219,218,0.6) 0%, transparent 70%)';
+      feedback.style.pointerEvents = 'none';
+      feedback.style.zIndex = '25';
+      feedback.style.animation = 'pulse-out 0.6s ease-out forwards';
+      document.body.appendChild(feedback);
+      setTimeout(() => feedback.remove(), 600);
+
       const country = getCountryAtPoint(lat, lonFromTheta);
       if (country) {
         showRegionalPanel(country.code, getSimTime());
@@ -451,11 +467,9 @@ setInterval(slowUpdate, 10000);  // Markers every 10s
 setInterval(updateStats, 60000); // Stats every 60s
 animate();
 
-// Fade-in reveal after first frame renders
-requestAnimationFrame(() => {
-  requestAnimationFrame(() => {
-    canvas.style.opacity = '1';
-  });
-});
+// Ensure canvas is fully visible
+setTimeout(() => {
+  canvas.style.opacity = '1';
+}, 500);
 
 console.log('who-up: globe is live!');
