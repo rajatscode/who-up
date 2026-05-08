@@ -4,6 +4,9 @@
  */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { getAwakeData, getWakenessAtPoint } from './awake.js';
 import { loadCountryBoundaries } from './country-borders.js';
 
@@ -159,9 +162,20 @@ export class GlobeRenderer {
   }
 
   _initPostProcessing() {
-    // Disabled: v19 shader effects (atmosphere, fresnel, glow) provide visual pop without post-processing
-    // UnrealBloomPass is too expensive on mobile/laptop GPUs. Direct rendering only.
-    this._useDirectRender = true;
+    // Enable aggressive bloom for MIND-BLOWING visual impact
+    // We have GPU headroom (60+ FPS baseline) — use it for maximum visual drama
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+
+    // Aggressive bloom: catch all bright glow areas and make them shimmer
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(window.innerWidth, window.innerHeight),
+      2.0,    // strength: glow intensity (2.0 = dramatic)
+      0.4,    // radius: glow spread (0.4 = tighter, more defined)
+      0.55    // threshold: brightness cutoff (0.55 = catches awake glow + markers)
+    );
+    this.composer.addPass(bloomPass);
+    this._useDirectRender = false;
   }
 
   _initCamera() {
@@ -275,8 +289,8 @@ export class GlobeRenderer {
           float spec = pow(max(dot(vNormal, halfDir), 0.0), 60.0);
           float isOcean = 1.0 - step(0.15, dot(dayTex, vec3(0.299, 0.587, 0.114)));
           daySurf += vec3(0.3, 0.25, 0.2) * spec * isOcean * 0.35;
-          // Subtle awake glow on populated areas
-          daySurf = mix(daySurf, mix(uAwakeColor, uAwakeIntense, popDensity), popDensity * 0.3);
+          // VIVID awake glow on populated areas (boosted for bloom impact)
+          daySurf = mix(daySurf, mix(uAwakeColor, uAwakeIntense, popDensity), popDensity * 0.5);
 
           // === NIGHT SIDE ===
           // NASA night lights + warm amber city glow
@@ -284,8 +298,8 @@ export class GlobeRenderer {
           // Boost city light areas with warm amber
           float nightBrightness = dot(nightTex, vec3(0.299, 0.587, 0.114));
           nightSurf = mix(nightSurf, uAwakeColor * 1.2, nightBrightness * 0.5);
-          // Add population density glow where night texture is dim
-          nightSurf += uAwakeColor * popDensity * 0.12;
+          // VIVID population density glow where night texture is dim (boosted for bloom)
+          nightSurf += uAwakeColor * popDensity * 0.28;
 
           // === TERMINATOR ===
           float termBand = smoothstep(-0.15, 0.05, sunDot) * smoothstep(0.25, 0.05, sunDot);
@@ -297,9 +311,9 @@ export class GlobeRenderer {
           vec3 color = mix(nightSurf, daySurf, daylight);
           color = mix(color, dawnDusk, termBand * 0.45);
 
-          // Surface fresnel (subtle atmosphere edge)
+          // Surface fresnel (VIVID atmosphere edge glow for bloom impact)
           float sf = pow(1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0))), 3.5);
-          color += vec3(0.08, 0.14, 0.28) * sf * 0.18;
+          color += vec3(0.12, 0.20, 0.40) * sf * 0.35;
 
           color = max(color, vec3(0.004, 0.004, 0.012));
           gl_FragColor = vec4(color, 1.0);
@@ -459,6 +473,7 @@ export class GlobeRenderer {
         blending: THREE.AdditiveBlending,
         depthTest: true,
         depthWrite: false,
+        toneMapped: false, // Prevent tone mapping to preserve bloom intensity
       });
       const dot = new THREE.Sprite(dotMat);
       dot.visible = false;
@@ -537,18 +552,18 @@ export class GlobeRenderer {
 
       const { dot, glow } = this._markerPool[idx];
 
-      // Update dot sprite
+      // Update dot sprite (VIVID for bloom impact)
       dot.position.set(x, y, z);
       dot.scale.setScalar(size * 2);
       dot.material.color.copy(this._reusableColor);
-      dot.material.opacity = (0.4 + city.wakeProbability * 0.25) * dayNightBrightness;
+      dot.material.opacity = (0.6 + city.wakeProbability * 0.35) * dayNightBrightness;
       dot.userData = city;
       dot.visible = true;
 
-      // Update glow sprite
+      // Update glow sprite (BOOSTED for dramatic bloom)
       glow.position.set(x, y, z);
-      glow.scale.setScalar(size * 4);
-      glow.material.opacity = city.wakeProbability * 0.12 * dayNightBrightness;
+      glow.scale.setScalar(size * 5.5);
+      glow.material.opacity = city.wakeProbability * 0.25 * dayNightBrightness;
       glow.visible = true;
 
       idx++;
@@ -695,6 +710,11 @@ export class GlobeRenderer {
     if (!this.animState.active) {
       this.controls.update();
     }
-    this.renderer.render(this.scene, this.camera);
+    // Render through bloom compositor for MIND-BLOWING visual drama
+    if (this.composer) {
+      this.composer.render();
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 }
