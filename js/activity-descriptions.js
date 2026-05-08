@@ -71,10 +71,10 @@ export const ACTIVITY_DESCRIPTIONS = {
 
 /**
  * Get activity description for a city at a given local hour
+ * Falls back to generic activity pattern if city not in database
  */
 export function getActivityDescription(cityName, localHour) {
   const city = ACTIVITY_DESCRIPTIONS[cityName];
-  if (!city) return null;
 
   // Determine time block (0-6, 6-12, 12-18, 18-24)
   let block;
@@ -83,5 +83,17 @@ export function getActivityDescription(cityName, localHour) {
   else if (localHour < 18) block = '12-18';
   else block = '18-24';
 
-  return city[block];
+  if (city) {
+    return city[block];
+  }
+
+  // Fallback: generate generic description based on time of day
+  const GENERIC_DESCRIPTIONS = {
+    '0-6': 'Late night. Night shift workers active. Streets quiet. Early risers preparing.',
+    '6-12': 'Morning awakening. Commuters and early risers out. Schools and offices opening.',
+    '12-18': 'Daytime peak. Workers, shoppers, students active. Lunch breaks and school runs.',
+    '18-24': 'Evening activity. Post-work crowds. Dinner time, entertainment, social gathering.',
+  };
+
+  return GENERIC_DESCRIPTIONS[block];
 }

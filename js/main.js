@@ -224,9 +224,9 @@ console.log('who-up: initializing...');
 initRegionalUI();
 initCityDetail(globe.scene);
 
-// Initial count — animate from 0
+// Initial count — start at 85% for fast dramatic ramp-up
 targetCount = estimateAwake(new Date());
-displayedCount = 0;
+displayedCount = targetCount * 0.85;
 
 // Start
 slowUpdate();
