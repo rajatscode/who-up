@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>who-up — Who's Awake Right Now?</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Awake count headline -->
+  <div id="headline">
+    <span id="awake-count">0</span>
+    <span id="awake-label">people are awake right now</span>
+  </div>
+
+  <!-- Key stats bar -->
+  <div id="stats-bar">
+    <div class="stat">
+      <span class="stat-value" id="stat-delta">—</span>
+      <span class="stat-label">vs 1 hour ago</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" id="stat-projection">—</span>
+      <span class="stat-label">will wake next hour</span>
+    </div>
+  </div>
+
+  <!-- Globe canvas -->
+  <canvas id="globe-canvas"></canvas>
+
+  <!-- Tooltip -->
+  <div id="tooltip" class="hidden">
+    <span id="tooltip-text"></span>
+  </div>
+
+  <!-- Regional panel (shown when country is selected) -->
+  <div id="regional-panel" class="hidden">
+    <div id="regional-header">
+      <span id="regional-country-name">Select a country</span>
+      <button id="regional-close-btn">&times;</button>
+    </div>
+    <div id="regional-content">
+      <div id="regional-awake-stat">
+        <span id="regional-awake-count">—</span>
+        <span id="regional-awake-label">people awake</span>
+      </div>
+      <div id="regional-details">
+        <span id="regional-percentage">—</span>
+        <span id="regional-region">—</span>
+      </div>
+      <div id="regional-cities" class="hidden">
+        <span class="regional-subheader">Major cities:</span>
+        <div id="regional-cities-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- City info card (shown when zoomed into city) -->
+  <div id="city-info" class="hidden">
+    <div id="city-header">
+      <span id="city-name">Loading...</span>
+      <span id="city-time">—</span>
+    </div>
+    <div id="city-stats">
+      <span id="city-awake-count">—</span>
+      <span id="city-awake-label">people awake</span>
+    </div>
+    <div id="city-description">
+      <p id="city-activity-text">—</p>
+    </div>
+  </div>
+
+  <!-- Three.js from CDN -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="js/main.js?v=17"></script>
+</body>
+</html>
