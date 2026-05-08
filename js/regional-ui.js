@@ -11,7 +11,9 @@ let selectedCountry = null;
  * Show regional panel with country data
  */
 export function showRegionalPanel(countryCode, date) {
+  console.log('showRegionalPanel called:', countryCode);
   const country = getCountry(countryCode);
+  console.log('Country lookup result:', country ? country.name : 'NULL');
   if (!country) return;
 
   selectedCountry = country;
@@ -73,6 +75,7 @@ export function showRegionalPanel(countryCode, date) {
   }
 
   // Show panel
+  console.log('Showing regional panel for', country.name, '- awake:', awakeCount.textContent);
   panel.classList.remove('hidden');
 }
 
