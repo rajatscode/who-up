@@ -3,7 +3,7 @@
  * Handles displaying and updating regional data panel
  */
 import { getCountry, getCountriesByRegion } from './geospatial.js';
-import { estimateAwake, getAwakeData, formatCount } from './awake.js';
+import { estimateAwake, getAwakeData, formatCount, getWakenessAtPoint } from './awake.js';
 
 let selectedCountry = null;
 
@@ -30,15 +30,27 @@ export function showRegionalPanel(countryCode, date) {
   const awakeData = getAwakeData(date);
   const regionCities = awakeData.filter(city => city.country === countryCode);
 
-  // Sum actual awake count from matched cities
-  const regionalAwake = regionCities.reduce((sum, city) => sum + city.awake, 0);
+  // Calculate awake population: use tracked cities if available, else estimate from country population
+  let regionalAwake = regionCities.reduce((sum, city) => sum + city.awake, 0);
+
+  if (regionCities.length === 0 && country.population) {
+    // Estimate awake for entire country using its UTC offset and population
+    const utcHour = date.getUTCHours() + date.getUTCMinutes() / 60;
+    const localHour = (utcHour + country.utcOffset) % 24;
+    const wakenessProb = getWakenessAtPoint(0, country.utcOffset * 15, date);
+    regionalAwake = Math.round(country.population * 1e6 * wakenessProb);
+  }
+
   const globalAwake = estimateAwake(date);
   const pctOfGlobal = globalAwake > 0 ? ((regionalAwake / globalAwake) * 100).toFixed(1) : 0;
 
   // Update panel content
   countryName.textContent = country.name;
   awakeCount.textContent = formatCount(regionalAwake);
-  awakeLabel.textContent = `people awake across ${regionCities.length} tracked cities`;
+  const cityText = regionCities.length > 0
+    ? `people awake across ${regionCities.length} tracked cities`
+    : `people awake (estimated from timezone)`;
+  awakeLabel.textContent = cityText;
   percentage.textContent = `${pctOfGlobal}% of global awake population`;
   region.textContent = `Region: ${country.region}`;
 

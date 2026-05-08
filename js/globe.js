@@ -393,7 +393,7 @@ export class GlobeRenderer {
 
   _initStars() {
     const starsGeometry = new THREE.BufferGeometry();
-    const starCount = 4000;
+    const starCount = 2000;
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
 

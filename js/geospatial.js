@@ -10,54 +10,53 @@
 // Future: Use full TopoJSON/GeoJSON for precise boundaries
 
 const COUNTRY_DATA = {
-  // Format: { code, name, region, bbox: [minLon, minLat, maxLon, maxLat], polygon?: [...] }
-  // Bounding boxes are approximate and sufficient for MVP click detection
+  // Format: { code, name, region, population (millions), utcOffset, bbox: [minLon, minLat, maxLon, maxLat] }
 
   // Asia-Pacific
-  'CN': { name: 'China', region: 'Asia', bbox: [73.5, 18.2, 135.1, 53.6] },
-  'IN': { name: 'India', region: 'Asia', bbox: [68.2, 8.4, 97.4, 35.5] },
-  'JP': { name: 'Japan', region: 'Asia', bbox: [130.0, 30.4, 145.0, 45.6] },
-  'KR': { name: 'South Korea', region: 'Asia', bbox: [124.6, 33.1, 131.9, 43.0] },
-  'ID': { name: 'Indonesia', region: 'Asia', bbox: [95.0, -11.0, 141.0, 6.1] },
-  'PH': { name: 'Philippines', region: 'Asia', bbox: [117.0, 5.0, 127.0, 19.0] },
-  'TH': { name: 'Thailand', region: 'Asia', bbox: [97.3, 5.6, 105.6, 20.5] },
-  'VN': { name: 'Vietnam', region: 'Asia', bbox: [102.1, 8.6, 109.5, 23.4] },
-  'BD': { name: 'Bangladesh', region: 'Asia', bbox: [88.0, 21.6, 92.7, 26.6] },
-  'PK': { name: 'Pakistan', region: 'Asia', bbox: [60.9, 23.6, 77.1, 37.1] },
+  'CN': { name: 'China', region: 'Asia', population: 1412, utcOffset: 8, bbox: [73.5, 18.2, 135.1, 53.6] },
+  'IN': { name: 'India', region: 'Asia', population: 1428, utcOffset: 5.5, bbox: [68.2, 8.4, 97.4, 35.5] },
+  'JP': { name: 'Japan', region: 'Asia', population: 123, utcOffset: 9, bbox: [130.0, 30.4, 145.0, 45.6] },
+  'KR': { name: 'South Korea', region: 'Asia', population: 52, utcOffset: 9, bbox: [124.6, 33.1, 131.9, 43.0] },
+  'ID': { name: 'Indonesia', region: 'Asia', population: 277, utcOffset: 7, bbox: [95.0, -11.0, 141.0, 6.1] },
+  'PH': { name: 'Philippines', region: 'Asia', population: 120, utcOffset: 8, bbox: [117.0, 5.0, 127.0, 19.0] },
+  'TH': { name: 'Thailand', region: 'Asia', population: 72, utcOffset: 7, bbox: [97.3, 5.6, 105.6, 20.5] },
+  'VN': { name: 'Vietnam', region: 'Asia', population: 99, utcOffset: 7, bbox: [102.1, 8.6, 109.5, 23.4] },
+  'BD': { name: 'Bangladesh', region: 'Asia', population: 169, utcOffset: 6, bbox: [88.0, 21.6, 92.7, 26.6] },
+  'PK': { name: 'Pakistan', region: 'Asia', population: 242, utcOffset: 5, bbox: [60.9, 23.6, 77.1, 37.1] },
 
   // Europe
-  'GB': { name: 'United Kingdom', region: 'Europe', bbox: [-8.6, 50.0, 1.8, 58.6] },
-  'FR': { name: 'France', region: 'Europe', bbox: [-5.2, 41.4, 8.2, 51.1] },
-  'DE': { name: 'Germany', region: 'Europe', bbox: [5.9, 47.3, 15.0, 55.1] },
-  'IT': { name: 'Italy', region: 'Europe', bbox: [6.6, 36.6, 18.5, 47.1] },
-  'ES': { name: 'Spain', region: 'Europe', bbox: [-9.3, 36.0, 3.3, 43.8] },
-  'RU': { name: 'Russia', region: 'Europe/Asia', bbox: [19.6, 41.2, 169.4, 81.9] },
-  'TR': { name: 'Turkey', region: 'Europe/Asia', bbox: [26.0, 36.0, 45.0, 42.8] },
+  'GB': { name: 'United Kingdom', region: 'Europe', population: 68, utcOffset: 0, bbox: [-8.6, 50.0, 1.8, 58.6] },
+  'FR': { name: 'France', region: 'Europe', population: 68, utcOffset: 1, bbox: [-5.2, 41.4, 8.2, 51.1] },
+  'DE': { name: 'Germany', region: 'Europe', population: 84, utcOffset: 1, bbox: [5.9, 47.3, 15.0, 55.1] },
+  'IT': { name: 'Italy', region: 'Europe', population: 56, utcOffset: 1, bbox: [6.6, 36.6, 18.5, 47.1] },
+  'ES': { name: 'Spain', region: 'Europe', population: 48, utcOffset: 1, bbox: [-9.3, 36.0, 3.3, 43.8] },
+  'RU': { name: 'Russia', region: 'Europe/Asia', population: 144, utcOffset: 3, bbox: [19.6, 41.2, 169.4, 81.9] },
+  'TR': { name: 'Turkey', region: 'Europe/Asia', population: 87, utcOffset: 3, bbox: [26.0, 36.0, 45.0, 42.8] },
 
   // Africa
-  'EG': { name: 'Egypt', region: 'Africa', bbox: [24.7, 22.0, 36.9, 31.6] },
-  'NG': { name: 'Nigeria', region: 'Africa', bbox: [2.7, 4.2, 14.7, 13.9] },
-  'ZA': { name: 'South Africa', region: 'Africa', bbox: [16.5, -34.8, 32.9, -22.1] },
-  'KE': { name: 'Kenya', region: 'Africa', bbox: [33.9, -4.7, 41.9, 5.0] },
-  'ET': { name: 'Ethiopia', region: 'Africa', bbox: [32.9, 3.4, 47.8, 14.9] },
-  'ZM': { name: 'Zambia', region: 'Africa', bbox: [22.0, -18.1, 33.7, -8.2] },
-  'CD': { name: 'Democratic Republic of Congo', region: 'Africa', bbox: [12.0, -13.5, 31.3, 5.3] },
+  'EG': { name: 'Egypt', region: 'Africa', population: 110, utcOffset: 2, bbox: [24.7, 22.0, 36.9, 31.6] },
+  'NG': { name: 'Nigeria', region: 'Africa', population: 223, utcOffset: 1, bbox: [2.7, 4.2, 14.7, 13.9] },
+  'ZA': { name: 'South Africa', region: 'Africa', population: 60, utcOffset: 2, bbox: [16.5, -34.8, 32.9, -22.1] },
+  'KE': { name: 'Kenya', region: 'Africa', population: 54, utcOffset: 3, bbox: [33.9, -4.7, 41.9, 5.0] },
+  'ET': { name: 'Ethiopia', region: 'Africa', population: 123, utcOffset: 3, bbox: [32.9, 3.4, 47.8, 14.9] },
+  'ZM': { name: 'Zambia', region: 'Africa', population: 20, utcOffset: 2, bbox: [22.0, -18.1, 33.7, -8.2] },
+  'CD': { name: 'Democratic Republic of Congo', region: 'Africa', population: 99, utcOffset: 1, bbox: [12.0, -13.5, 31.3, 5.3] },
 
   // Americas
-  'US': { name: 'United States', region: 'North America', bbox: [-125.0, 25.0, -66.9, 49.4] },
-  'CA': { name: 'Canada', region: 'North America', bbox: [-141.0, 41.7, -52.6, 83.1] },
-  'MX': { name: 'Mexico', region: 'North America', bbox: [-117.1, 14.5, -86.7, 32.7] },
-  'BR': { name: 'Brazil', region: 'South America', bbox: [-73.9, -33.7, -34.8, 5.3] },
-  'AR': { name: 'Argentina', region: 'South America', bbox: [-73.6, -55.5, -53.6, -21.8] },
-  'CL': { name: 'Chile', region: 'South America', bbox: [-75.6, -56.2, -66.9, -17.5] },
-  'CO': { name: 'Colombia', region: 'South America', bbox: [-76.1, -4.2, -66.9, 12.5] },
-  'PE': { name: 'Peru', region: 'South America', bbox: [-81.3, -18.4, -68.6, 0.0] },
+  'US': { name: 'United States', region: 'North America', population: 345, utcOffset: -5, bbox: [-125.0, 25.0, -66.9, 49.4] },
+  'CA': { name: 'Canada', region: 'North America', population: 40, utcOffset: -5, bbox: [-141.0, 41.7, -52.6, 83.1] },
+  'MX': { name: 'Mexico', region: 'North America', population: 128, utcOffset: -6, bbox: [-117.1, 14.5, -86.7, 32.7] },
+  'BR': { name: 'Brazil', region: 'South America', population: 215, utcOffset: -3, bbox: [-73.9, -33.7, -34.8, 5.3] },
+  'AR': { name: 'Argentina', region: 'South America', population: 47, utcOffset: -3, bbox: [-73.6, -55.5, -53.6, -21.8] },
+  'CL': { name: 'Chile', region: 'South America', population: 20, utcOffset: -3, bbox: [-75.6, -56.2, -66.9, -17.5] },
+  'CO': { name: 'Colombia', region: 'South America', population: 53, utcOffset: -5, bbox: [-76.1, -4.2, -66.9, 12.5] },
+  'PE': { name: 'Peru', region: 'South America', population: 34, utcOffset: -5, bbox: [-81.3, -18.4, -68.6, 0.0] },
 
   // Middle East
-  'SA': { name: 'Saudi Arabia', region: 'Middle East', bbox: [34.4, 16.3, 55.9, 32.2] },
-  'AE': { name: 'United Arab Emirates', region: 'Middle East', bbox: [51.6, 22.6, 56.4, 26.1] },
-  'IR': { name: 'Iran', region: 'Middle East', bbox: [44.0, 25.0, 63.3, 39.8] },
-  'IQ': { name: 'Iraq', region: 'Middle East', bbox: [38.8, 29.1, 48.8, 37.4] },
+  'SA': { name: 'Saudi Arabia', region: 'Middle East', population: 37, utcOffset: 3, bbox: [34.4, 16.3, 55.9, 32.2] },
+  'AE': { name: 'United Arab Emirates', region: 'Middle East', population: 10, utcOffset: 4, bbox: [51.6, 22.6, 56.4, 26.1] },
+  'IR': { name: 'Iran', region: 'Middle East', population: 91, utcOffset: 3.5, bbox: [44.0, 25.0, 63.3, 39.8] },
+  'IQ': { name: 'Iraq', region: 'Middle East', population: 44, utcOffset: 3, bbox: [38.8, 29.1, 48.8, 37.4] },
 };
 
 // Pre-sort countries by bbox area (smallest first) so specific countries
