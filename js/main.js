@@ -330,29 +330,86 @@ function generateInsight() {
   const utcHour = now.getUTCHours() + now.getUTCMinutes() / 60;
   const globalAwake = estimateAwake(now);
 
+  // Calculate actual local times in key regions
+  const americasHour = (utcHour - 5 + 24) % 24;   // EST (UTC-5)
+  const europeHour = (utcHour + 1) % 24;          // CET (UTC+1)
+  const middleEastHour = (utcHour + 3) % 24;      // EAT (UTC+3)
+  const asiaHour = (utcHour + 8) % 24;            // CST (UTC+8)
+  const oceaniaHour = (utcHour + 10) % 24;        // AEST (UTC+10)
+
   const messages = [];
 
-  // Determine active regions based on UTC hour
-  if (utcHour >= 0 && utcHour < 6) {
-    // Americas sleeping, Europe/Africa night
-    messages.push('Deep night across the Americas — focus on essential workers');
-    messages.push('Europe entering early morning — first commuters waking');
-  } else if (utcHour >= 6 && utcHour < 12) {
-    // Europe morning, Asia night
-    messages.push('Europe in morning rush — over 200M commuting');
-    messages.push('Asia winding down evening shift');
-  } else if (utcHour >= 12 && utcHour < 18) {
-    // Asia peak noon, Americas late morning
-    messages.push('Asia at midday peak — 2B+ at their busiest');
-    messages.push('Europe in afternoon lull — post-lunch energy dip');
+  // Real-time regional descriptions based on actual local time
+
+  // Americas activity
+  if (americasHour >= 0 && americasHour < 4) {
+    messages.push('Americas in deep night — only essential overnight work');
+  } else if (americasHour >= 4 && americasHour < 7) {
+    messages.push('Americas pre-dawn — early risers and night shift ending');
+  } else if (americasHour >= 7 && americasHour < 10) {
+    messages.push('Americas morning surge — 200M+ commuting and waking');
+  } else if (americasHour >= 10 && americasHour < 15) {
+    messages.push('Americas midday peak — all three zones active');
+  } else if (americasHour >= 15 && americasHour < 19) {
+    messages.push('Americas afternoon momentum — West Coast ramping up');
+  } else if (americasHour >= 19 && americasHour < 23) {
+    messages.push('Americas evening peak — highest density of the day');
   } else {
-    // Americas day, Europe evening
-    messages.push('Americas in full swing — highest density of activity');
-    messages.push('Europe entering evening shift — 600M+ wrapping work');
+    messages.push('Americas winding down — 150M+ still active before bed');
   }
 
-  // Always add a future-looking message
-  messages.push(`Rising toward ${Math.round(globalAwake / 1e9 * 10) / 10}B: See who's waking next`);
+  // Europe activity
+  if (europeHour >= 0 && europeHour < 5) {
+    messages.push('Europe deep sleep — only night workers active');
+  } else if (europeHour >= 5 && europeHour < 7) {
+    messages.push('Europe pre-dawn — farmers and early commuters');
+  } else if (europeHour >= 7 && europeHour < 10) {
+    messages.push('Europe morning rush — 150M+ commuting');
+  } else if (europeHour >= 10 && europeHour < 12) {
+    messages.push('Europe mid-morning — full productivity');
+  } else if (europeHour >= 12 && europeHour < 14) {
+    messages.push('Europe lunch break — brief activity dip');
+  } else if (europeHour >= 14 && europeHour < 18) {
+    messages.push('Europe afternoon work — post-lunch productivity');
+  } else if (europeHour >= 18 && europeHour < 22) {
+    messages.push('Europe evening — heading home from work');
+  } else {
+    messages.push('Europe settling down — 50M+ still awake');
+  }
+
+  // Asia activity
+  if (asiaHour >= 0 && asiaHour < 5) {
+    messages.push('Asia night sleep — minimal activity');
+  } else if (asiaHour >= 5 && asiaHour < 7) {
+    messages.push('Asia dawn — first commuters leaving home');
+  } else if (asiaHour >= 7 && asiaHour < 10) {
+    messages.push('Asia morning surge — 1B+ getting to work');
+  } else if (asiaHour >= 10 && asiaHour < 13) {
+    messages.push('Asia late morning — intense work phase');
+  } else if (asiaHour >= 13 && asiaHour < 15) {
+    messages.push('Asia post-lunch — brief energy dip');
+  } else if (asiaHour >= 15 && asiaHour < 18) {
+    messages.push('Asia afternoon grind — 1.5B+ at peak');
+  } else if (asiaHour >= 18 && asiaHour < 22) {
+    messages.push('Asia evening shift — heading home');
+  } else {
+    messages.push('Asia late night — 500M+ still awake');
+  }
+
+  // Global trend
+  const now1h = new Date(now.getTime() - 3600000);
+  const awake1h = estimateAwake(now1h);
+  const delta = globalAwake - awake1h;
+
+  if (Math.abs(delta) > 200e6) {
+    if (delta > 0) {
+      messages.push(`Surge: +${(delta / 1e6).toFixed(0)}M waking in the last hour`);
+    } else {
+      messages.push(`Decline: ${(delta / 1e6).toFixed(0)}M falling asleep in the last hour`);
+    }
+  } else {
+    messages.push(`Steady: ~${Math.round(globalAwake / 1e9 * 10) / 10}B awake globally`);
+  }
 
   return messages[Math.floor(Math.random() * messages.length)];
 }

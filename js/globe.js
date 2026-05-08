@@ -129,6 +129,18 @@ export class GlobeRenderer {
     this._initStars();
     this._initMarkerSystem();
 
+    // Camera orbit animation state
+    this.animState = {
+      active: false,
+      startPos: new THREE.Vector3(),
+      endPos: new THREE.Vector3(),
+      startTarget: new THREE.Vector3(),
+      endTarget: new THREE.Vector3(),
+      elapsed: 0,
+      duration: 0,
+    };
+    this._lastRenderTime = performance.now();
+
     window.addEventListener('resize', () => this._onResize());
     this._onResize();
   }
