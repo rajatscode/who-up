@@ -68,6 +68,13 @@ function updateCountDisplay() {
   const displayValue = Math.round(displayedCount + jitter);
 
   awakeCountEl.textContent = formatExact(displayValue);
+
+  // Pulse animation when reaching target (within 0.5%)
+  const pctOffTarget = Math.abs(displayValue - targetCount) / targetCount;
+  if (pctOffTarget < 0.005) {
+    awakeCountEl.classList.add('pulse');
+    setTimeout(() => awakeCountEl.classList.remove('pulse'), 600);
+  }
 }
 
 /**

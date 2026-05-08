@@ -367,7 +367,7 @@ export class GlobeRenderer {
         varying vec3 vViewDir;
         void main() {
           float f = 1.0 - dot(vNormal, vViewDir);
-          float intensity = pow(f, 5.0) * 0.22;
+          float intensity = pow(f, 4.5) * 0.35;
           gl_FragColor = vec4(uColor, intensity);
         }
       `,
@@ -519,20 +519,24 @@ export class GlobeRenderer {
       const size = Math.sqrt(city.population / 1e6) * 0.035 * city.wakeProbability;
       this._reusableColor.copy(transitionColor).lerp(awakeColor, city.wakeProbability);
 
+      // Time-of-day brightness: peaks at noon (12:00), dims at midnight (0:00)
+      const hourAngle = (city.localHour - 12) * Math.PI / 12;
+      const dayNightBrightness = 0.4 + 0.6 * (0.5 + 0.5 * Math.cos(hourAngle));
+
       const { dot, glow } = this._markerPool[idx];
 
       // Update dot sprite
       dot.position.set(x, y, z);
       dot.scale.setScalar(size * 2);
       dot.material.color.copy(this._reusableColor);
-      dot.material.opacity = 0.4 + city.wakeProbability * 0.25;
+      dot.material.opacity = (0.4 + city.wakeProbability * 0.25) * dayNightBrightness;
       dot.userData = city;
       dot.visible = true;
 
       // Update glow sprite
       glow.position.set(x, y, z);
       glow.scale.setScalar(size * 4);
-      glow.material.opacity = city.wakeProbability * 0.12;
+      glow.material.opacity = city.wakeProbability * 0.12 * dayNightBrightness;
       glow.visible = true;
 
       idx++;
