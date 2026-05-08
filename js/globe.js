@@ -171,9 +171,9 @@ export class GlobeRenderer {
     // Aggressive bloom: catch all bright glow areas and make them shimmer
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      2.0,    // strength: glow intensity (2.0 = dramatic)
+      1.5,    // strength: glow intensity (reduced from 2.0 to avoid glitter)
       0.4,    // radius: glow spread (0.4 = tighter, more defined)
-      0.55    // threshold: brightness cutoff (0.55 = catches awake glow + markers)
+      0.7     // threshold: brightness cutoff (raised from 0.55 to skip small bright particles)
     );
     this.composer.addPass(bloomPass);
     this._useDirectRender = false;

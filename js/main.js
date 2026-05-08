@@ -63,6 +63,26 @@ const timelapseBtnLive = document.getElementById('tl-live');
 const timelapseTimeEl = document.getElementById('tl-time');
 const timelapseSpeedBtns = document.querySelectorAll('.tl-speed-btn');
 
+// Update schedule handles
+let slowUpdateHandle = null;
+let updateStatsHandle = null;
+
+function startSlowUpdateSchedule() {
+  if (slowUpdateHandle) clearInterval(slowUpdateHandle);
+  const delay = getNextUpdateTime(10000);
+  setTimeout(() => {
+    slowUpdate();
+    slowUpdateHandle = setInterval(slowUpdate, 10000);
+  }, delay);
+}
+
+function startFrequentUpdates() {
+  if (slowUpdateHandle) clearInterval(slowUpdateHandle);
+  if (updateStatsHandle) clearInterval(updateStatsHandle);
+  slowUpdateHandle = setInterval(slowUpdate, 1000);   // Every 1s during timelapse
+  updateStatsHandle = setInterval(updateStats, 2000);  // Every 2s during timelapse
+}
+
 // Toggle time-lapse mode on/off
 timelapseBtnToggle.addEventListener('click', () => {
   if (timelapseActive) {
@@ -82,6 +102,8 @@ timelapseBtnToggle.addEventListener('click', () => {
     // Force immediate update
     slowUpdate();
     updateStats();
+    // Switch to frequent updates during timelapse
+    startFrequentUpdates();
   }
 });
 
@@ -104,6 +126,14 @@ function goLive() {
   displayedCount = estimateAwake(new Date()) * 0.95; // smooth transition back
   slowUpdate();
   updateStats();
+  // Switch back to synchronized updates
+  startSlowUpdateSchedule();
+  if (updateStatsHandle) clearInterval(updateStatsHandle);
+  const statsDelay = getNextUpdateTime(60000);
+  setTimeout(() => {
+    updateStats();
+    updateStatsHandle = setInterval(updateStats, 60000);
+  }, statsDelay);
 }
 
 // Speed buttons
@@ -515,6 +545,13 @@ document.getElementById('regional-close-btn').addEventListener('click', () => {
   globe.orbitToGlobal();
 });
 
+// Sync updates to UTC seconds for cross-tab consistency
+function getNextUpdateTime(interval) {
+  const now = Date.now();
+  const nextSyncTime = Math.ceil(now / interval) * interval;
+  return nextSyncTime - now;
+}
+
 // Initial count — start at 85% for fast dramatic ramp-up
 targetCount = estimateAwake(getSimTime());
 displayedCount = targetCount * 0.85;
@@ -522,8 +559,13 @@ displayedCount = targetCount * 0.85;
 // Start
 slowUpdate();
 updateStats();
-setInterval(slowUpdate, 10000);  // Markers every 10s
-setInterval(updateStats, 60000); // Stats every 60s
+startSlowUpdateSchedule();
+const statsDelay = getNextUpdateTime(60000);
+setTimeout(() => {
+  updateStats();
+  updateStatsHandle = setInterval(updateStats, 60000);
+}, statsDelay);
+
 animate();
 
 // Ensure canvas is fully visible
