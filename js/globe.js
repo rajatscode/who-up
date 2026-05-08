@@ -218,7 +218,7 @@ export class GlobeRenderer {
   }
 
   _initGlobe() {
-    const geometry = new THREE.SphereGeometry(GLOBE_RADIUS, 64, 32);
+    const geometry = new THREE.SphereGeometry(GLOBE_RADIUS, 128, 64);
 
     // Load real satellite textures
     const textureLoader = new THREE.TextureLoader();
@@ -626,9 +626,9 @@ export class GlobeRenderer {
       dot.userData = city;
       dot.visible = true;
 
-      // Update glow sprite (BOOSTED for dramatic bloom)
+      // Update glow sprite (modest scale to avoid overwhelming glow)
       glow.position.set(x, y, z);
-      glow.scale.setScalar(size * 5.5);
+      glow.scale.setScalar(size * 4.0);
       glow.material.opacity = city.wakeProbability * 0.25 * dayNightBrightness;
       glow.visible = true;
 
@@ -669,10 +669,10 @@ export class GlobeRenderer {
     for (let i = 0; i < this._activeMarkerCount; i++) {
       const { dot, glow } = this._markerPool[i];
       if (dot.userData?.name === cityName) {
-        // Boost hovered marker
-        dot.material.opacity = Math.min(dot.material.opacity * 1.8, 1.0);
-        glow.scale.multiplyScalar(1.6);
-        glow.material.opacity = Math.min(glow.material.opacity * 2.5, 0.6);
+        // Subtle hover highlight — minimal scale boost to avoid overwhelming glow
+        dot.material.opacity = Math.min(dot.material.opacity * 1.3, 1.0);
+        glow.scale.multiplyScalar(1.1);
+        glow.material.opacity = Math.min(glow.material.opacity * 1.3, 0.6);
       }
     }
   }
