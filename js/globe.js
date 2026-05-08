@@ -281,29 +281,30 @@ export class GlobeRenderer {
           float isOcean = 1.0 - step(0.15, dot(dayTex, vec3(0.299, 0.587, 0.114)));
           daySurf += vec3(0.3, 0.25, 0.2) * spec * isOcean * 0.35;
           // Subtle awake glow on populated areas
-          daySurf = mix(daySurf, mix(uAwakeColor, uAwakeIntense, popDensity), popDensity * 0.2);
+          daySurf = mix(daySurf, mix(uAwakeColor, uAwakeIntense, popDensity), popDensity * 0.3);
 
           // === NIGHT SIDE ===
           // NASA night lights + warm amber city glow
-          vec3 nightSurf = nightTex * 1.5;
+          vec3 nightSurf = nightTex * 2.0;
           // Boost city light areas with warm amber
           float nightBrightness = dot(nightTex, vec3(0.299, 0.587, 0.114));
-          nightSurf = mix(nightSurf, uAwakeColor * 1.2, nightBrightness * 0.4);
+          nightSurf = mix(nightSurf, uAwakeColor * 1.2, nightBrightness * 0.5);
           // Add population density glow where night texture is dim
-          nightSurf += uAwakeColor * popDensity * 0.08;
+          nightSurf += uAwakeColor * popDensity * 0.12;
 
           // === TERMINATOR ===
           float termBand = smoothstep(-0.15, 0.05, sunDot) * smoothstep(0.25, 0.05, sunDot);
-          vec3 dawnDusk = mix(vec3(0.8, 0.25, 0.1), vec3(0.6, 0.15, 0.25),
+          // Warm golden sunrise (day) to cool violet dusk (night) with latitude variation
+          vec3 dawnDusk = mix(vec3(1.0, 0.6, 0.2), vec3(0.4, 0.2, 0.6),
                               0.5 + 0.5 * sin(vUv.y * 6.28));
 
           // === COMPOSITE ===
           vec3 color = mix(nightSurf, daySurf, daylight);
-          color = mix(color, dawnDusk, termBand * 0.35);
+          color = mix(color, dawnDusk, termBand * 0.45);
 
           // Surface fresnel (subtle atmosphere edge)
-          float sf = pow(1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0))), 4.0);
-          color += vec3(0.06, 0.10, 0.20) * sf * 0.1;
+          float sf = pow(1.0 - abs(dot(normalize(vNormal), vec3(0.0, 0.0, 1.0))), 3.5);
+          color += vec3(0.08, 0.14, 0.28) * sf * 0.18;
 
           color = max(color, vec3(0.004, 0.004, 0.012));
           gl_FragColor = vec4(color, 1.0);
@@ -347,7 +348,7 @@ export class GlobeRenderer {
           float fresnel = 1.0 - dot(vNormal, vViewDir);
           // Day side gets brighter atmosphere
           float sunFacing = dot(normalize(vWorldPos), uSunDirection) * 0.5 + 0.5;
-          float intensity = pow(fresnel, 3.0) * (0.3 + sunFacing * 0.4);
+          float intensity = pow(fresnel, 3.0) * (0.4 + sunFacing * 0.5);
           // Warmer color on sun-facing side
           vec3 col = mix(uColor, vec3(0.5, 0.7, 0.9), sunFacing * 0.3);
           gl_FragColor = vec4(col, intensity);
@@ -383,7 +384,7 @@ export class GlobeRenderer {
         varying vec3 vViewDir;
         void main() {
           float f = 1.0 - dot(vNormal, vViewDir);
-          float intensity = pow(f, 6.0) * 0.15;
+          float intensity = pow(f, 5.0) * 0.22;
           gl_FragColor = vec4(uColor, intensity);
         }
       `,
@@ -432,10 +433,10 @@ export class GlobeRenderer {
     starsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const starsMaterial = new THREE.PointsMaterial({
-      size: 0.5,
+      size: 0.7,
       sizeAttenuation: true,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.95,
       vertexColors: true,
     });
 
