@@ -136,6 +136,38 @@ body::after {
   margin: 0 auto;
 }
 
+/* Live data indicator */
+#live-indicator {
+  position: fixed;
+  top: 40px;
+  right: 24px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(240, 230, 211, 0.8);
+  pointer-events: none;
+}
+
+#live-badge {
+  color: #5ff8f5;
+  text-shadow: 0 0 15px rgba(95, 248, 245, 0.8);
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+#sync-time {
+  color: rgba(240, 230, 211, 0.6);
+  font-size: 0.7rem;
+  font-weight: 400;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 .stat {
   display: flex;
   flex-direction: column;

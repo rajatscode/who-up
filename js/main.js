@@ -23,6 +23,10 @@ const cityTimeEl = document.getElementById('city-time');
 const cityAwakeCountEl = document.getElementById('city-awake-count');
 const cityAwakeLabelEl = document.getElementById('city-awake-label');
 const cityActivityTextEl = document.getElementById('city-activity-text');
+const syncTimeEl = document.getElementById('sync-time');
+
+// Live data sync tracking
+let lastSyncTime = Date.now();
 
 // Initialize globe
 const globe = new GlobeRenderer(canvas);
@@ -247,7 +251,8 @@ canvas.addEventListener('click', (e) => {
       while (lonFromTheta < -180) lonFromTheta += 360;
       while (lonFromTheta > 180) lonFromTheta -= 360;
 
-      // Visual feedback: pulse glow at click point
+      // Visual feedback: VIVID pulse glow + particle burst at click point
+      // Main pulse circle
       const feedback = document.createElement('div');
       feedback.style.position = 'fixed';
       feedback.style.left = e.clientX + 'px';
@@ -256,12 +261,45 @@ canvas.addEventListener('click', (e) => {
       feedback.style.height = '40px';
       feedback.style.transform = 'translate(-50%, -50%)';
       feedback.style.borderRadius = '50%';
-      feedback.style.background = 'radial-gradient(circle, rgba(127,219,218,0.6) 0%, transparent 70%)';
+      feedback.style.background = 'radial-gradient(circle, rgba(127,219,218,0.9) 0%, rgba(127,219,218,0.4) 50%, transparent 70%)';
       feedback.style.pointerEvents = 'none';
       feedback.style.zIndex = '25';
       feedback.style.animation = 'pulse-out 0.6s ease-out forwards';
+      feedback.style.boxShadow = '0 0 30px rgba(127,219,218,0.8), 0 0 60px rgba(127,219,218,0.4)';
       document.body.appendChild(feedback);
       setTimeout(() => feedback.remove(), 600);
+
+      // Particle burst for MIND-BLOWING effect
+      const particleCount = 8;
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        const angle = (i / particleCount) * Math.PI * 2;
+        const distance = 80 + Math.random() * 40;
+        const finalX = e.clientX + Math.cos(angle) * distance;
+        const finalY = e.clientY + Math.sin(angle) * distance;
+
+        particle.style.position = 'fixed';
+        particle.style.left = e.clientX + 'px';
+        particle.style.top = e.clientY + 'px';
+        particle.style.width = '6px';
+        particle.style.height = '6px';
+        particle.style.borderRadius = '50%';
+        particle.style.background = 'radial-gradient(circle, #7fdbda, rgba(127,219,218,0.3))';
+        particle.style.pointerEvents = 'none';
+        particle.style.zIndex = '24';
+        particle.style.boxShadow = '0 0 12px rgba(127,219,218,0.8)';
+        particle.style.transition = `all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+        document.body.appendChild(particle);
+
+        // Trigger animation on next frame
+        setTimeout(() => {
+          particle.style.left = finalX + 'px';
+          particle.style.top = finalY + 'px';
+          particle.style.opacity = '0';
+        }, 10);
+
+        setTimeout(() => particle.remove(), 600);
+      }
 
       const country = getCountryAtPoint(lat, lonFromTheta);
       if (country) {
@@ -277,6 +315,20 @@ canvas.addEventListener('click', (e) => {
 /**
  * Main animation loop
  */
+function updateSyncDisplay() {
+  const secondsAgo = Math.floor((Date.now() - lastSyncTime) / 1000);
+  if (secondsAgo === 0) {
+    syncTimeEl.textContent = 'Synced now';
+  } else if (secondsAgo === 1) {
+    syncTimeEl.textContent = 'Synced 1 second ago';
+  } else if (secondsAgo < 60) {
+    syncTimeEl.textContent = `Synced ${secondsAgo} seconds ago`;
+  } else {
+    const minutesAgo = Math.floor(secondsAgo / 60);
+    syncTimeEl.textContent = `Synced ${minutesAgo}m ago`;
+  }
+}
+
 function animate() {
   requestAnimationFrame(animate);
 
@@ -292,6 +344,9 @@ function animate() {
 
   // Smooth count animation every frame
   updateCountDisplay();
+
+  // Update sync time display occasionally
+  if (Math.random() < 0.01) updateSyncDisplay();
 
   // Update time-lapse display and markers at higher frequency during time-lapse
   if (timelapseActive && timelapsePlaying) {
@@ -443,6 +498,10 @@ function slowUpdate() {
   const insightEl = document.getElementById('insight-message');
   insightEl.textContent = generateInsight();
   insightEl.classList.remove('hidden');
+
+  // Update sync timestamp
+  lastSyncTime = Date.now();
+  updateSyncDisplay();
 }
 
 // Initialize

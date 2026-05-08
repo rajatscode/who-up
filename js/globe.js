@@ -129,6 +129,7 @@ export class GlobeRenderer {
     this._initLights();
     this._initGlobe();
     this._initAtmosphere();
+    this._initWakeWave();
     this._initStars();
     this._initMarkerSystem();
 
@@ -406,6 +407,68 @@ export class GlobeRenderer {
     this.scene.add(this.halo);
   }
 
+  _initWakeWave() {
+    // SIGNATURE FEATURE: Animated wake wave showing terminator + awakeness transition
+    // Creates a glowing band around the globe that indicates where sleep→wake is happening
+
+    // Create a torus-like band positioned at the terminator
+    const waveGeometry = new THREE.TorusGeometry(GLOBE_RADIUS * 1.01, 0.3, 16, 100);
+
+    const waveMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uSunDirection: { value: new THREE.Vector3(1, 0, 0) },
+      },
+      vertexShader: `
+        uniform float uTime;
+        varying vec3 vWorldPos;
+        varying vec3 vNormal;
+
+        void main() {
+          vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uSunDirection;
+        uniform float uTime;
+        varying vec3 vWorldPos;
+        varying vec3 vNormal;
+
+        void main() {
+          // Distance to terminator (where sunDot ≈ 0)
+          vec3 normPos = normalize(vWorldPos);
+          float sunDot = dot(normPos, uSunDirection);
+
+          // Terminator band: bright near sunDot = 0
+          float termBand = exp(-abs(sunDot) * 8.0) * 0.8;
+
+          // Glow color: cyan for waking, orange for sleeping
+          vec3 wakeColor = vec3(0.3, 0.95, 0.95);  // Cyan
+          vec3 sleepColor = vec3(0.95, 0.6, 0.2);  // Orange
+
+          // Determine if this point is in wake zone or sleep zone based on sun direction
+          float inWakeZone = step(0.0, sunDot);  // 1 if day side, 0 if night side
+          vec3 bandColor = mix(sleepColor, wakeColor, inWakeZone);
+
+          // Intensity pulses to show animation
+          float pulse = 0.5 + 0.5 * sin(uTime * 2.0);
+
+          gl_FragColor = vec4(bandColor, termBand * pulse * 0.6);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+
+    this.waveWave = new THREE.Mesh(waveGeometry, waveMaterial);
+    this.scene.add(this.waveWave);
+    this.waveMaterial = waveMaterial;
+  }
+
   _initStars() {
     const starsGeometry = new THREE.BufferGeometry();
     const starCount = 2000;
@@ -510,15 +573,18 @@ export class GlobeRenderer {
     const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
     const sunLat = 23.44 * Math.sin((2 * Math.PI / 365) * (dayOfYear - 81)) * Math.PI / 180;
 
-    this.globeMaterial.uniforms.uSunDirection.value.set(
+    const sunDir = new THREE.Vector3(
       Math.cos(sunLat) * Math.cos(sunLon),
       Math.sin(sunLat),
       Math.cos(sunLat) * Math.sin(sunLon)
     );
+
+    this.globeMaterial.uniforms.uSunDirection.value.copy(sunDir);
     if (this.atmosphere?.material?.uniforms?.uSunDirection) {
-      this.atmosphere.material.uniforms.uSunDirection.value.copy(
-        this.globeMaterial.uniforms.uSunDirection.value
-      );
+      this.atmosphere.material.uniforms.uSunDirection.value.copy(sunDir);
+    }
+    if (this.waveMaterial?.uniforms?.uSunDirection) {
+      this.waveMaterial.uniforms.uSunDirection.value.copy(sunDir);
     }
   }
 
@@ -710,6 +776,12 @@ export class GlobeRenderer {
     if (!this.animState.active) {
       this.controls.update();
     }
+
+    // Update wake wave animation time
+    if (this.waveMaterial?.uniforms?.uTime) {
+      this.waveMaterial.uniforms.uTime.value = now * 0.001;
+    }
+
     // Render through bloom compositor for MIND-BLOWING visual drama
     if (this.composer) {
       this.composer.render();
