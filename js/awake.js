@@ -146,5 +146,9 @@ export function formatCount(n) {
     return `~${billions.toFixed(1)} billion`;
   }
   const millions = n / 1e6;
-  return `~${millions.toFixed(0)} million`;
+  if (millions >= 1) {
+    return `~${millions.toFixed(0)} million`;
+  }
+  const thousands = n / 1e3;
+  return `~${Math.round(thousands)}K`;
 }

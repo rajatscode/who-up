@@ -23,6 +23,13 @@ const COUNTRY_DATA = {
   'VN': { name: 'Vietnam', region: 'Asia', population: 99, utcOffset: 7, bbox: [102.1, 8.6, 109.5, 23.4] },
   'BD': { name: 'Bangladesh', region: 'Asia', population: 169, utcOffset: 6, bbox: [88.0, 21.6, 92.7, 26.6] },
   'PK': { name: 'Pakistan', region: 'Asia', population: 242, utcOffset: 5, bbox: [60.9, 23.6, 77.1, 37.1] },
+  'MY': { name: 'Malaysia', region: 'Asia', population: 34, utcOffset: 8, bbox: [100.1, 0.9, 119.3, 7.4] },
+  'SG': { name: 'Singapore', region: 'Asia', population: 6, utcOffset: 8, bbox: [103.6, 1.2, 104.0, 1.5] },
+  'TW': { name: 'Taiwan', region: 'Asia', population: 24, utcOffset: 8, bbox: [120.0, 21.9, 122.0, 25.3] },
+
+  // Oceania
+  'AU': { name: 'Australia', region: 'Oceania', population: 26, utcOffset: 10, bbox: [113.2, -43.6, 153.6, -10.7] },
+  'NZ': { name: 'New Zealand', region: 'Oceania', population: 5, utcOffset: 12, bbox: [166.4, -47.3, 178.6, -34.4] },
 
   // Europe
   'GB': { name: 'United Kingdom', region: 'Europe', population: 68, utcOffset: 0, bbox: [-8.6, 50.0, 1.8, 58.6] },
